@@ -12,6 +12,9 @@ R_FILES = $(addprefix $(R_DIR)/, $(R_REPO_FILES))
 SETUP_FILES = $(addprefix $(SETUP_DIR)/, $(SETUP_REPO_FILES))
 DNA_NEXUS_FILES = $(addprefix $(APP_NAME)/, src/code.sh Readme.developer.md Readme.md dxapp.json )
 
+.PHONY : all
+all: $(SETUP_FILES) $(R_FILES) $(DNA_NEXUS_FILES) archives
+ 
 $(APP_NAME): 
 	mkdir -p $@/src
 	mkdir -p $@/resources/tmp
@@ -50,11 +53,6 @@ clean:
 .PHONY : archives
 archives: $(MD5_ARCHIVE) setup/local/check_update_archives.sh $(APP_NAME) 
 	./setup/local/check_update_archives.sh $< $(ARCHIVE_DIR)
-
-
-.PHONY : all
-all: $(SETUP_FILES) $(R_FILES) $(DNA_NEXUS_FILES) archives
-     
 
 
 .PHONY : update_archive_md5sum 
