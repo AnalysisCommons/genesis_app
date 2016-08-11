@@ -1,0 +1,166 @@
+{
+  "name": "genesis_v2.mkl",
+  "title": "genesis_v2",
+  "summary": "genesis_v2",
+  "tags": [
+    "Statistics"
+  ],
+  "dxapi": "1.0.0",
+  "inputSpec": [
+    {
+      "name": "phenofile",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "outcome_name",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "outcome_type",
+      "class": "string",
+      "optional": true,
+      "default": "C"
+    },
+    {
+      "name": "covariate_list",
+      "class": "string",
+      "optional": true,
+      "default": ""
+    },
+    {
+      "name": "snpinfofile",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "genotypefile",
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "outputfilename",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "kinshipmatrix",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "genderCol",
+      "class": "string",
+      "optional": true,
+      "default": "sex"
+    },
+    {
+      "name": "pheno_id",
+      "class": "string",
+      "optional": true,
+      "default": "idno"
+    },
+    {
+      "name": "nsmatch",
+      "label": "Include coding SNPs only if the aggregation entry gene matches the annotated gene ",
+      "class": "int",
+      "optional": true,
+      "default": 1
+    },
+    {
+      "name": "buffer",
+      "class": "int",
+      "optional": true,
+      "default": 50000
+    },
+    {
+      "name": "genefile",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "top_maf",
+      "class": "float",
+      "optional": false,
+      "default": 0.05
+    },
+    {
+      "name": "snp_filter",
+      "class": "string",
+      "optional": false,
+      "default": "TRUE"
+    },
+    {
+      "name": "gene_filter",
+      "class": "string",
+      "optional": false,
+      "default": "TRUE"
+    },
+    {
+      "name": "test_requested",
+      "help": "Valid tests are one of the collapsing tests SKAT, Burden, SKATO or one of the single variant tests Wald and Score",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "burden_test",
+      "help": "Valid burden tests: Score, Wald, Firth ",
+      "class": "string",
+      "optional": true,
+      "default": "Score"
+    },
+    {
+      "name": "debug",
+      "class": "int",
+      "optional": true,
+      "default": 0
+    },
+    {
+      "name": "min_mac",
+      "help": "Min mac value for a single variant test",
+      "class": "int",
+      "optional": true,
+      "default": 3
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "results",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {
+        "name": "libxml2-dev"
+      }
+    ],
+    "bundledDependsByRegion": {
+      "aws:us-east-1": [
+        {
+          "name": "resources.tar.gz",
+          "id": {
+            "$dnanexus_link": "file-Byb88K00Q19bQ7J9g0854PY1"
+          }
+        }
+      ]
+    },
+    "systemRequirements": {
+      "main": {
+        "instanceType": "mem3_ssd1_x32"
+      }
+    },
+    "file": "src/code.sh",
+    "release": "14.04",
+    "interpreter": "bash",
+    "distribution": "Ubuntu"
+  },
+  "access": {
+    "project": "CONTRIBUTE",
+    "allProjects": "CONTRIBUTE",
+    "network": [
+      "*"
+    ]
+  }
+}
