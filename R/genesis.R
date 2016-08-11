@@ -83,7 +83,7 @@ registerDoMC(cores=num.cores-1)
 cat('Number of cores', num.cores,'\n')
 
 ## Setup
-source("/tmp/pipelineFunctions.R")
+source("/home/dnanexus/pipelineFunctions.R")
 covariates <- split.by.comma(covariate.string)  
 
 ##  Gene list

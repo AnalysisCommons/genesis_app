@@ -1,14 +1,16 @@
 SHELL=/bin/bash
 APP_NAME=genesis_v2.mkl
-ARCHIVE_DIR=$(APP_NAME)/resources/tmp/
-R_DIR=$(APP_NAME)/resources/home/dnanexus/
-SETUP_DIR=$(APP_NAME)/resources/home/dnanexus/
+ARCHIVE_DIR=$(APP_NAME)/resources/tmp
+R_DIR=$(APP_NAME)/resources/home/dnanexus
+SETUP_DIR=$(APP_NAME)/resources/home/dnanexus
+MD5_ARCHIVE = setup/local/archives.md5
+
 R_REPO_FILES = $(notdir $(wildcard R/*.R))
 SETUP_REPO_FILES = $(notdir $(wildcard setup/cloud/*))
+
 R_FILES = $(addprefix $(R_DIR)/, $(R_REPO_FILES))
 SETUP_FILES = $(addprefix $(SETUP_DIR)/, $(SETUP_REPO_FILES))
-MD5_ARCHIVE = setup/local/archives.md5
-DNA_NEXUS_FILES = $( addprefix $(APP_NAME), src/code.sh Readme.developer.md Readme.md dxapp.json )
+DNA_NEXUS_FILES = $(addprefix $(APP_NAME)/, src/code.sh Readme.developer.md Readme.md dxapp.json )
 
 $(APP_NAME): 
 	mkdir -p $@/src
@@ -32,21 +34,27 @@ $(APP_NAME)/Readme.md : app/Readme.md $(APP_NAME)
 	cp $< $@
 
 
-
-$(R_DIR)/%.R:  R/%.R
+$(R_DIR)/%.R :  R/%.R $(APP_NAME)
 	cp $< $@
 
 
-$(SETUP_DIR)/% : /setup/cloud/%
+$(SETUP_DIR)/% : setup/cloud/% $(APP_NAME)
 	cp $< $@
+	
+# Remove everything but archives 
+.PHONY: clean 
+clean:
+	rm $(R_FILE) $(SETUP_FILES) $(DNA_NEXUS_FILES)
+         
 
 .PHONY : archives
-archives: $(MD5_ARCHIVE) setup/local/check_update_archives.sh
+archives: $(MD5_ARCHIVE) setup/local/check_update_archives.sh $(APP_NAME) 
 	./setup/local/check_update_archives.sh $< $(ARCHIVE_DIR)
 
 
 .PHONY : all
-all: $(R_FILES) $(SETUP_FILES) $(DNA_NEXUS_FILES)
+all: $(SETUP_FILES) $(R_FILES) $(DNA_NEXUS_FILES) archives
+     
 
 
 .PHONY : update_archive_md5sum 

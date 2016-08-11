@@ -1,7 +1,7 @@
 #!/bin/bash 
 md5_checksum_file="$1"
 archive_directory="$2"
-dna_nexus_archives="Commons:/Tools/Archives/"
+dna_nexus_archives="Commons:/Tools/Archive/"
 
 
 if [ ! -e ${md5_checksum_file} ]
