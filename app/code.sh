@@ -23,7 +23,6 @@ main() {
     echo "Value of outputfilename: '$outputfilename'"
 
     echo "Value of kinshipmatrix: '$kinshipmatrix'"
-    echo "Value of genderCol: '$genderCol'"
     echo "Value of pheno_id: '$pheno_id'"
     echo "Value of snpNames: '$snpNames"
     echo "Value of nsmatch: '$nsmatch'"
@@ -57,11 +56,14 @@ main() {
     dx download "$genefile" -o genefile &
     # install R
     # add R to path 
+    ls
+    
     echo "INSTALLING GENESIS"
     make & 
     export PATH=/opt/R/bin/:${PATH}
     export MKL_NUM_THREADS=1
     wait
+    ls
 ##   echo "FIXING PHENO"
 ## Fixing pheno file 
 ##    head -n1 phenofile > fixed_pheno
@@ -75,7 +77,7 @@ main() {
     if [ ${debug} -ne 0 ]
     then
        echo "DEBUG is on sleeping for ${debug}h"
-       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results kinshipmatrix $genderCol $pheno_id  $nsmatch $buffer genefile $snp_filter $gene_filter $top_maf  $test_requested $burden_test $min_mac"
+       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix $pheno_id  $nsmatch $buffer genefile $snp_filter $gene_filter $top_maf  $test_requested $burden_test $min_mac"
        sleep ${debug}h
     fi
     wait
@@ -88,7 +90,7 @@ main() {
     fi
  
     echo "Running code"
-    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results kinshipmatrix $genderCol $pheno_id  $nsmatch $buffer genefile $snp_filter $gene_filter $top_maf  $test_requested $burden_test $min_mac
+    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results kinshipmatrix $pheno_id  $nsmatch $buffer genefile $snp_filter $gene_filter $top_maf  $test_requested $burden_test $min_mac
     echo "Finished running code"
     results=$(dx upload results --brief)
     dx-jobutil-add-output results "$results" --class=file

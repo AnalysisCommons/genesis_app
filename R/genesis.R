@@ -11,20 +11,19 @@ output.file <- args[7]
 
 #==optional parameters
 kinship.matrix <- args[8]
-gender.column <- args[9]
-pheno.id <- args[10]
-nsmatch <- args[11]
+pheno.id <- args[9]
+nsmatch <- args[10]
 
 
 # added these to JSON
-BUFFER <- as.numeric(args[12]) #jb
-gene.file <- args[13] #jb
-snp.filter <- args[14] #jb
-gene.filter <- args[15] #jb
-top.maf <- as.numeric(args[16]) #jb
-test.requested <-  args[17]
-burden.test.requested <-  args[18]
-min.mac <- as.integer(args[19])
+BUFFER <- as.numeric(args[11]) #jb
+gene.file <- args[12] #jb
+snp.filter <- args[13] #jb
+gene.filter <- args[14] #jb
+top.maf <- as.numeric(args[15]) #jb
+test.requested <-  args[16]
+burden.test.requested <-  args[17]
+min.mac <- as.integer(args[18])
 
 # GLOBAL VARIABLES
 collapsing.tests <- c("SKAT", "Burden")
@@ -41,6 +40,18 @@ GetFamilyDistribution <- function(response.type) {
                }
                return(family)
            }
+GetKinshipMatrix <- function(kinship.matrix){
+  cat(kinship.matrix,'\n')
+  #if(grepl('Rda',kinship.matrix,ignore.case=TRUE)){
+    kmatr = get(load(kinship.matrix))
+  #}
+  #else{
+  #  kmatr = as.matrix(read.csv(kinship.matrix,as.is=T,check.names=F,row.names=1))
+  #}
+
+cat('Loaded Kinship NROW:',NROW(kmatr),' NCOL:',NCOL(kmatr),'\n')
+kmatr
+}
 
 getMAC <- function(gds.file){
   geno.dat <- seqGetData(gds.file,"genotype")
@@ -49,7 +60,6 @@ getMAC <- function(gds.file){
 
 cat('output.file',output.file,'\n')
 cat('kinship.matrix',kinship.matrix,'\n')
-cat('gender.column',gender.column,'\n')
 cat('nsmatch',nsmatch,'\n')
 cat('buffer',BUFFER,'\n')
 cat('gene.file',gene.file,'\n')
@@ -115,17 +125,9 @@ cat('Output SNPINFO N=',nrow(snpinfo),'\n')
 ## phenotype 
 phenotype.data <- read.csv(phenotype.file, header=TRUE, as.is=TRUE)
 
-# Set gender.col to "sex" in both covariates and phenotype
-if (gender.column %in% covariates){
-    covariates[covariates == gender.column] = "sex"
-}
-if (gender.column %in% colnames(phenotype.data)){
-    colnames(phenotype.data)[colnames(phenotype.data) == gender.column] <- "sex"
-}
-
 
 cat('Input pheno N=',nrow(phenotype.data),'\n')
-pheno <- reducePheno(phenotype.data, outcome.name, covariates, pheno.id, "sex")
+pheno <- reducePheno(phenotype.data, outcome.name, covariates, pheno.id)
 cat('Output pheno N=',nrow(pheno),'\n')
 
 ## Report dropped individuals
@@ -139,7 +141,7 @@ if (NROW(dropped.ids) != 0 ) {
 # For GDS files
 f <- seqOpen(genotype.files)
 sample.ids <- seqGetData(f, "sample.id")
-pheno <- pheno[row.names(pheno) %in% sample.ids,c(outcome.name, covariates, "sex"),drop=F]
+pheno <- pheno[row.names(pheno) %in% sample.ids,c(outcome.name, covariates),drop=F]
 full.sample.ids <- sample.ids 
 
 #subset to phenotyped samples
@@ -157,7 +159,8 @@ pos = seqGetData(f, "position")
 
 ## Load KINSHIP matrix
 ## Kinship doesn't contain all samples
-kmatr = get(load(kinship.matrix))
+kmatr = GetKinshipMatrix(kinship.matrix)
+#kmatr = get(load(kinship.matrix))
 pheno = pheno[row.names(pheno) %in% row.names(kmatr),,drop=F]
 kmatr = kmatr[row.names(kmatr) %in% row.names(pheno),colnames(kmatr) %in% row.names(pheno)]
 cat('Output pheno in Kinship N=',nrow(pheno),'\n')
