@@ -19,12 +19,14 @@
     },
     {
       "name": "outcome_type",
+      "label": "Continuous or Dichotomous",
       "class": "string",
       "optional": true,
-      "default": "C"
+      "default": "Continuous"
     },
     {
       "name": "covariate_list",
+      "label": "Comma separated list",
       "class": "string",
       "optional": true,
       "default": ""
@@ -50,12 +52,6 @@
       "optional": true
     },
     {
-      "name": "genderCol",
-      "class": "string",
-      "optional": true,
-      "default": "sex"
-    },
-    {
       "name": "pheno_id",
       "class": "string",
       "optional": true,
@@ -66,13 +62,13 @@
       "label": "Include coding SNPs only if the aggregation entry gene matches the annotated gene ",
       "class": "int",
       "optional": true,
-      "default": 1
+      "default":0
     },
     {
       "name": "buffer",
       "class": "int",
       "optional": true,
-      "default": 50000
+      "default": 0
     },
     {
       "name": "genefile",
