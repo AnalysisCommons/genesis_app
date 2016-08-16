@@ -24,7 +24,7 @@ setup_mkl: extract_mkl
 .PHONY : install_missing
 install_missing:
 	sudo apt-get update --yes
-	sudo apt-get install --no-install-recommends --yes openjdk-7-jre-headless libnetcdfc7
+	sudo apt-get install --no-install-recommends --yes libnetcdfc7
 
 
 .PHONY : create_compile_links
