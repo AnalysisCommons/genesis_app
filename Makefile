@@ -56,6 +56,7 @@ archives: $(MD5_ARCHIVE) setup/local/check_update_archives.sh $(APP_NAME)
 
 
 .PHONY : update_archive_md5sum 
-update_md5_archives: $(ARCHIVE_DIR)
-	md5sum $(ARCHIVE_DIR)/*.tar.gz > $(MD5_ARCHIVE)
+update_archive_md5sum: $(ARCHIVE_DIR)
+	md5sum $(ARCHIVE_DIR)/*.tar.gz | awk '{sub(".*/","AUX_DIRNAME/", $$2);print }' > $(MD5_ARCHIVE)
+
 
