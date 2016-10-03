@@ -1,13 +1,15 @@
 {
   "name": "genesis_v2.mkl",
   "title": "genesis_v2",
-  "summary": "genesis_v2",
+  "summary": "Runs single variant and aggregate test for genetic data.  Implements Single-variant, Burden, SKAT and SKAT-O tests for Continuous or Dichotomous outcomes. All tests account for familiar relatedness through kinship matrixes.\n\n\nUnderlying functions adapted from:\nConomos MP and Thornton T (2016). GENESIS: GENetic EStimation and Inference in Structured samples (GENESIS): Statistical methods for analyzing genetic data from samples with population structure and/or relatedness. R package version 2.3.4. \n\thttp://bioconductor.org/packages/devel/bioc/html/GENESIS.html\n\thttps://github.com/smgogarten/GENESIS",
+
   "tags": [
     "Statistics"
   ],
   "dxapi": "1.0.0",
   "inputSpec": [
-    {
+    {      
+    "patterns": ["*.csv"],
       "name": "phenofile",
       "class": "file",
       "optional": false
@@ -15,7 +17,50 @@
     {
       "name": "outcome_name",
       "class": "string",
+      "label": "Column name of the outcome variable in the phenotype file",
       "optional": false
+    },
+    {
+      "name": "covariate_list",
+      "label": "Comma separated list that match column names in the phenotype file. Leave blank for no adjustments",
+      "class": "string",
+      "optional": true,
+      "default": ""
+    },
+    {
+      "name": "snpinfofile",
+      "label": "Annotation file for filtering variants.  The variant .... ",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.csv",
+        "*.txt"
+      ]
+    },
+    {
+      "name": "genotypefile",
+    "patterns": [
+        "*.gds",
+        "*.GDS"
+      ],
+      "class": "file",
+      "optional": false
+    },
+    {
+      "name": "outputfilename",
+      "label": "prefix for output file name, no spaces",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "kinshipmatrix",
+      "label": "kinship matrix with sample ids as the row and column names.  Matrices save as R data will load faster, but csv is accepted as well",
+      "class": "file",
+      "optional": false,
+      "patterns": [
+        "*.Rda",
+        "*.csv"
+      ]
     },
     {
       "name": "outcome_type",
@@ -25,99 +70,71 @@
       "default": "Continuous"
     },
     {
-      "name": "covariate_list",
-      "label": "Comma separated list",
+      "name": "test_type",
+      "help": "Valid tests are one of the collapsing tests SKAT, Burden, SKATO or Single",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "test_stat",
+      "help": "Valid tests statistic types are: Score, Wald. Firth can be used with Burden test only. ",
       "class": "string",
       "optional": true,
-      "default": ""
+      "default": "Score"
     },
-    {
-      "name": "snpinfofile",
-      "class": "file",
-      "optional": false
-    },
-    {
-      "name": "genotypefile",
-      "class": "file",
-      "optional": false
-    },
-    {
-      "name": "outputfilename",
-      "class": "string",
-      "optional": false
-    },
-    {
-      "name": "kinshipmatrix",
-      "class": "file",
-      "optional": true
-    },
+
     {
       "name": "pheno_id",
+      "help": "Column name that contains the sample IDs.  These IDs should match the genotype file IDs and the kinship file IDs.",
       "class": "string",
-      "optional": true,
-      "default": "idno"
-    },
-    {
-      "name": "nsmatch",
-      "label": "Include coding SNPs only if the aggregation entry gene matches the annotated gene ",
-      "class": "int",
-      "optional": true,
-      "default":0
+      "default": "ID"
     },
     {
       "name": "buffer",
+      "help": "Additional flanking region around aggregation start & stop regions. Often used for adding flanking regions to aggregation files based on transcript start and stop.",
       "class": "int",
       "optional": true,
       "default": 0
     },
     {
       "name": "genefile",
+      "help": "File contains the start and stop positions for aggregating variants into region-based tests.  File must contain 3 requeired columns labeled 'start', 'stop' and 'CHR'.   start and stop must be numeric.  CHR must be in the form of 'chr#'. ",
       "class": "file",
       "optional": true
     },
     {
-      "name": "top_maf",
-      "class": "float",
-      "optional": false,
-      "default": 0.05
-    },
-    {
       "name": "snp_filter",
+      "help": "Filter the annotation file.  Can filter based on the annotation column names using R syntax (e.g. CADD_phred_score > 10 | function %in% ('nonsynonymous','splice','stoploss','stopgain')) , where 'CADD_phred_score' and 'function' are column names in annotation file.",
       "class": "string",
-      "optional": false,
+      "optional": true,
       "default": "TRUE"
     },
     {
       "name": "gene_filter",
+      "help": "Filter the aggregation file.  Can filter based on the gene column names using R syntax (e.g. start > 1e6 & stop < 1e7) or (name %in% c('IL2','IL17R'), where 'name', 'start' and 'stop' are column names in aggregation file.",
       "class": "string",
-      "optional": false,
+      "optional": true,
       "default": "TRUE"
     },
     {
-      "name": "test_requested",
-      "help": "Valid tests are one of the collapsing tests SKAT, Burden, SKATO or one of the single variant tests Wald and Score",
-      "class": "string",
-      "optional": false
+      "name": "min_mac",
+      "help": "Minimum minor allele count for threshold ( generally used for single variant tests )",
+      "class": "int",
+      "optional": true,
+      "default": 5
     },
     {
-      "name": "burden_test",
-      "help": "Valid burden tests: Score, Wald, Firth ",
-      "class": "string",
+      "name": "top_maf",
+      "help": "Maximim minor allele frequency ( generally used for aggregate tests )",
+      "class": "float",
       "optional": true,
-      "default": "Score"
+      "default": 1
     },
     {
       "name": "debug",
       "class": "int",
       "optional": true,
       "default": 0
-    },
-    {
-      "name": "min_mac",
-      "help": "Min mac value for a single variant test",
-      "class": "int",
-      "optional": true,
-      "default": 3
     }
   ],
   "outputSpec": [
