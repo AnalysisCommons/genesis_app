@@ -131,6 +131,13 @@
       "default": 1
     },
     {
+      "name": "weights",
+      "help": "beta weights set to flat weights (e.g. set to 'c(1,25)' for Wu weights or 'c(0.5,0.5)' for Madsen-Browning weights)",
+      "class": "string",
+      "optional": false,
+      "default": "c(1,1)"
+    },
+    {
       "name": "debug",
       "class": "int",
       "optional": true,

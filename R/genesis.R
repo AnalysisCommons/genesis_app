@@ -23,6 +23,10 @@ top.maf <- as.numeric(args[14])
 test.stat <-  args[15] # Score, Wald, Firth
 test.type  <-  args[16] # Burden, Single, SKAT
 min.mac <- as.integer(args[17])
+weights <- args[18]
+
+weights = eval(parse(text=weights))
+cat('Weights',weights,class(weights),'\n')
 
 # GLOBAL VARIABLES
 collapsing.tests <- c("SKAT", "Burden")
@@ -319,6 +323,7 @@ foreach (current.gene=genes,
                  collapse.results <- assocTestSeq( genotype.data, 
                                          nullmod, 
                                          xlist, 
+                                         weight.beta = weights,
                                          test=test.type, 
                                          burden.test=test.stat)
             })

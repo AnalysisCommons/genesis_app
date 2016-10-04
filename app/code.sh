@@ -22,6 +22,8 @@ main() {
 
     echo "Value of test_type: '$test_type'"
     echo "Value of test_stat: '$test_stat'"
+    echo "Value of weights: '$weights'"
+
 
     covariate_list=$(echo ${covariate_list} | sed 's/ //g') 
     echo "Value of covariate_list: '$covariate_list'"
@@ -63,7 +65,7 @@ main() {
     if [ ${debug} -ne 0 ]
     then
        echo "DEBUG is on sleeping for ${debug}h"
-       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac"
+       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights"
        sleep ${debug}h
     fi
     wait
@@ -75,9 +77,9 @@ main() {
        echo "The phenofile is not ready"
     fi
  
-    echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac"
+    echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights"
     echo "Running code"
-    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf  $test_stat $test_type $min_mac
+    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf  $test_stat $test_type $min_mac $weights
     echo "Finished running code"
     results=$(dx upload results --brief)
     dx-jobutil-add-output results "$results" --class=file
