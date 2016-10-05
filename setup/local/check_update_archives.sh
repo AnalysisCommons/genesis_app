@@ -55,7 +55,7 @@ then
         then
             for archive_file in ${archive_files_to_update}
             do
-                dx download "${dna_nexus_archives}/${archive_file}" -o "${archive_directory}"
+                dx download -f "${dna_nexus_archives}/${archive_file}" -o "${archive_directory}"
             done
         else
           echo "No access to the DNA NEXUS ARCHIVE DIR: ${dna_nexus_archives}"
