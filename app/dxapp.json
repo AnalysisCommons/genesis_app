@@ -118,7 +118,7 @@
     },
     {
       "name": "min_mac",
-      "help": "Minimum minor allele count for threshold ( generally used for single variant tests )",
+      "help": "Minimum minor allele count for threshold ( only used for single variant tests )",
       "class": "int",
       "optional": true,
       "default": 5
@@ -131,11 +131,24 @@
       "default": 1
     },
     {
+      "name": "conditional",
+      "help": "chr pos ref alt format for the SNP that will be added to the model",
+      "class": "string",
+      "optional": true,
+      "default": "NA"
+    },
+    {
       "name": "weights",
       "help": "beta weights set to flat weights (e.g. set to 'c(1,25)' for Wu weights or 'c(0.5,0.5)' for Madsen-Browning weights)",
       "class": "string",
       "optional": false,
       "default": "c(1,1)"
+    },
+    {
+      "default": 30,
+      "optional": false,
+      "name": "user_cores",
+      "class": "int"
     },
     {
       "name": "debug",

@@ -24,6 +24,9 @@ test.stat <-  args[15] # Score, Wald, Firth
 test.type  <-  args[16] # Burden, Single, SKAT
 min.mac <- as.integer(args[17])
 weights <- args[18]
+conditional <- args[19]
+user_cores <-  args[20]
+
 
 weights = eval(parse(text=weights))
 cat('Weights',weights,class(weights),'\n')
@@ -77,6 +80,13 @@ cat('test.stat',test.stat,'\n')
 cat('test.type',test.type,'\n')
 cat('outcome.type',outcome.type,'\n')
 
+if(conditional != 'NA'){
+  cpos = strsplit(conditional,':')[[1]][2]
+}else{
+  cpos = FALSE
+}
+cat('conditional',conditional,'\t pos',cpos,'\n')
+
 if (!(test.stat %in% test.stat.vals)){
      msg = paste("The requested test statistic:", test.stat, "is not available (Use Firth, Score, Wald!")
      stop(msg)
@@ -96,9 +106,12 @@ suppressMessages(library(GENESIS))
 suppressMessages(library(data.table))
 suppressMessages(library(doMC))
 
-num.cores <- detectCores(logical=TRUE)
-registerDoMC(cores=num.cores-1)
-cat('Number of cores', num.cores,'\n')
+num_cores <- detectCores(logical=TRUE)
+
+
+registerDoMC(cores=min(c(user_cores,num_cores)))
+cat('Running Analysis with ',min(c(user_cores,num_cores)),' cores\n')
+cat('Number of cores', num_cores,'\n')
 
 ## Setup
 source("/home/dnanexus/pipelineFunctions.R")
@@ -146,14 +159,31 @@ seqSetFilter(f,sample.id = row.names(pheno))
 sample.ids <- seqGetData(f, "sample.id")
 pheno <- pheno[match(sample.ids,row.names(pheno)),,drop=F]
 
-
-
 # get position list before any variant filters are applied
 pos = seqGetData(f, "position")
 
 
+##
+if(cpos >0){
+  cat('Conditioning on ',conditional,'...\n')
+  cidx = which(pos == as.numeric(cpos))
+  if(any(cidx)){
+    
+    seqSetFilter(f,variant.sel=cidx, sample.id = row.names(pheno),verbose=FALSE)
+    pheno$csnp = altDosage(f,  use.names=FALSE)
+  }else{
+    stop('Can not find snp ',conditional,' with position ',cpos,' to condition on in data file')
+  }
+  
+  dropConditionalCases = NROW(pheno)-NROW(pheno[complete.cases(pheno),])
+  if(dropConditionalCases > 0){
+    cat('Warning: Dropping ',dropConditionalCases,' samples due to missing conditional genotype calls\n')
+  }
 
-
+  pheno = pheno[complete.cases(pheno),]
+  
+  covariates[length(covariates) + 1] <- 'csnp'
+}
 ##  Gene list
 #
 # Aggregation file
@@ -187,15 +217,11 @@ if(gene.file == "NO_GENE_REGION_FILE" & test.type != 'Single'){
     stop("chr column in aggregation file must be formated as 'chr#' (e.g. chr1) ")
   }
 
-
-
   cat('Aggregate file filter',gene.filter,'\n')
   kg = eval(parse(text= paste0('subset(kg,',gene.filter,')')))
 }
 cat('NGENEs=',NROW(kg),'done\n')
 genes <- kg$name
-
-
 
 
 
@@ -229,6 +255,7 @@ row.names(modified.pheno) <- full.sample.ids
 sample.data.for.annotated <- data.frame(sample.id = full.sample.ids,
                                         modified.pheno,
                                         stringsAsFactors=F)
+rm(modified.pheno)
 
 annotated.frame <- AnnotatedDataFrame(sample.data.for.annotated)
 
@@ -238,7 +265,7 @@ annotated.frame <- AnnotatedDataFrame(sample.data.for.annotated)
 # Should depend on response type
 
 cat('start fit....\n')
-kmatr.ns = as.matrix(kmatr)
+kmatr = as.matrix(kmatr)
 if (test.stat == 'Firth'){
   cat('WARNING: Firth test does NOT use kinship information - unrelated only')
   nullmod <- fitNullReg(scanData = scan.annotated.frame,
@@ -251,11 +278,22 @@ if (test.stat == 'Firth'){
                      outcome = outcome.name,
                      covars = covariates,
                      family = GetFamilyDistribution(outcome.type),
-                     covMatList = kmatr.ns)
+                     covMatList = kmatr)
 }
 
+sort( sapply(ls(),function(x){object.size(get(x))})) 
+rm(kmatr)
+rm(scan.annotated.frame)
+sample_ids = row.names(pheno)
+rm(pheno)
+head(snpinfo)
+snpinfo = as.data.frame(snpinfo)[,c('CHR','POS')]
+gc()
+
+sort( sapply(ls(),function(x){object.size(get(x))})) 
 ## For each aggregation unit - named 'gene' in code, but can be any start-stop region
 ## Work for each gene is parallelized over the cores
+print(ls())
 mcoptions <- list(preschedule=FALSE, set.seed=FALSE)
 sm_obj <- 
 foreach (current.gene=genes, 
@@ -286,7 +324,7 @@ foreach (current.gene=genes,
     ## extract genotypes
     f <- seqOpen(genotype.files)
     
-    seqSetFilter(f,variant.id = snp_idx,sample.id = row.names(pheno),verbose=FALSE)
+    seqSetFilter(f,variant.id = snp_idx,sample.id = sample_ids,verbose=FALSE)
     
     ## filter to maf and remove monomorphic
     maf <- SeqVarTools::alleleFrequency(f)
@@ -295,6 +333,7 @@ foreach (current.gene=genes,
     if (test.type %in% collapsing.tests){
         filtered.alleles <- maf < top.maf
     }
+    mac <- getMAC(f)
     if (test.type ==  'Single'){
       mac <- getMAC(f)
       filtered.alleles <- mac  > min.mac
@@ -327,10 +366,12 @@ foreach (current.gene=genes,
                                          test=test.type, 
                                          burden.test=test.stat)
             })
-          generes <- cbind(data.frame(gene=current.gene, num.variants= nrow(xlist[[1]])), collapse.results$results)
+          generes <- cbind(data.frame(gene=current.gene, num.variants= nrow(xlist[[1]])),cmac=sum(mac[filtered.alleles & maf > 0]), collapse.results$results)
             generes$start=kg[gidx,]$start - BUFFER
             generes$stop=kg[gidx,]$stop + BUFFER
             generes$chr=kg[gidx,]$chr
+            generes$cmaf=sum(maf[filtered.alleles & maf > 0])
+            
        #} else if(test.stat == 'Firth') {  # Single variant test
        #   system.time({generes <- regression(genotype.data,
        #                                      outcome=outcome.name,
@@ -343,7 +384,9 @@ foreach (current.gene=genes,
                                               nullmod, 
                                               test = test.stat,verbose=FALSE)})
           generes$gene <- current.gene
-          generes$pos=pos[snp_idx[filtered.alleles & maf > 0]] 
+          generes$pos=pos[snp_idx[filtered.alleles & maf > 0]]
+          generes$snpID = paste0(generes$chr,':',generes$pos)
+          
       }
    } 
    seqClose(f)

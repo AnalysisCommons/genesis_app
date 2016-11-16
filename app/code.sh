@@ -27,7 +27,8 @@ main() {
 
     covariate_list=$(echo ${covariate_list} | sed 's/ //g') 
     echo "Value of covariate_list: '$covariate_list'"
-    
+    echo "value of conditional SNP: '$conditional'"    
+    echo "Value of user_cores: '$user_cores'"
 
 
     dx download "$phenofile" -o phenofile &
@@ -65,7 +66,7 @@ main() {
     if [ ${debug} -ne 0 ]
     then
        echo "DEBUG is on sleeping for ${debug}h"
-       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights"
+       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $user_cores"
        sleep ${debug}h
     fi
     wait
@@ -77,9 +78,9 @@ main() {
        echo "The phenofile is not ready"
     fi
  
-    echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights"
+    echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $conditional"
     echo "Running code"
-    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf  $test_stat $test_type $min_mac $weights
+    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf  $test_stat $test_type $min_mac $weights $conditional $user_cores
     echo "Finished running code"
     results=$(dx upload results --brief)
     dx-jobutil-add-output results "$results" --class=file
