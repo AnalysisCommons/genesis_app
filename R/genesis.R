@@ -25,7 +25,7 @@ test.type  <-  args[16] # Burden, Single, SKAT
 min.mac <- as.integer(args[17])
 weights <- args[18]
 conditional <- args[19]
-user_cores <-  args[20]
+user_cores <-  as.numeric(args[20])
 
 
 weights = eval(parse(text=weights))
@@ -110,7 +110,7 @@ num_cores <- detectCores(logical=TRUE)
 
 
 registerDoMC(cores=min(c(user_cores,num_cores)))
-cat('Running Analysis with ',min(c(user_cores,num_cores)),' cores\n')
+cat('Running Analysis with ',min(c(as.numeric(user_cores),num_cores)),' cores\n')
 cat('Number of cores', num_cores,'\n')
 
 ## Setup
@@ -195,12 +195,11 @@ if(gene.file == "NO_GENE_REGION_FILE" & test.type != 'Single'){
   stop('For aggregate tests you must provide a aggregation file.')
 }else if(gene.file == "NO_GENE_REGION_FILE" & test.type == 'Single'){
   
-  batchsize = 500000
+  batchsize = 200000
   if(gene.file == "NO_GENE_REGION_FILE"){
     nbatch = ceiling(max(pos)/batchsize)
     kg = data.frame('name'=paste0('batch',1:nbatch),'start'=batchsize*((1:nbatch)-1),'stop'=batchsize*1:nbatch)
   }
-  print(kg)
   
 }else{
   system.time({ kg = fread(gene.file, stringsAsFactors=F, sep=',', header=T) })
@@ -335,19 +334,13 @@ foreach (current.gene=genes,
     }
     mac <- getMAC(f)
     if (test.type ==  'Single'){
-      mac <- getMAC(f)
-      filtered.alleles <- mac  > min.mac
+      filtered.alleles <- mac  >= min.mac
       
     }
     
     seqSetFilter(f,variant.sel=snp_idx[filtered.alleles & maf > 0], verbose=FALSE)
     num.polymorphic.snps <- seqSummary(f, "genotype", check="none", verbose=FALSE)[["seldim"]][3]
     num.snps = length(maf)
-    
-    cat(num.polymorphic.snps)
-    cat('+')
-    cat(test.type)
-    cat(test.stat)
     
     if(num.polymorphic.snps > 0){
       
@@ -382,7 +375,7 @@ foreach (current.gene=genes,
  
           system.time({generes <- assocTestMM(genotype.data, 
                                               nullmod, 
-                                              test = test.stat,verbose=FALSE)})
+                                              test = test.stat,verbose=TRUE)})
           generes$gene <- current.gene
           generes$pos=pos[snp_idx[filtered.alleles & maf > 0]]
           generes$snpID = paste0(generes$chr,':',generes$pos)
