@@ -26,18 +26,19 @@ min.mac <- as.integer(args[17])
 weights <- args[18]
 conditional <- args[19]
 user_cores <-  as.numeric(args[20])
+het_vars <-  args[21]
 
 
 weights = eval(parse(text=weights))
 cat('Weights',weights,class(weights),'\n')
 
 # GLOBAL VARIABLES
-collapsing.tests <- c("SKAT", "Burden")
+collapsing.tests <- c("SKAT",  "Burden")
 test.type.vals <- c("Single","SKAT", "Burden")
 test.stat.vals <- c("Score", "Wald", "Firth")
 
 if(!test.type %in% test.type.vals){
-    stop("Test type bust be one of ",paste(test.type.vals,sep=','))
+    stop("Test type must be one of ",paste(test.type.vals,sep=','))
 }
 
 GetFamilyDistribution <- function(response.type) {
@@ -73,12 +74,14 @@ getMAC <- function(gds.file){
 cat('output.file',output.file,'\n')
 cat('kinship.matrix',kinship.matrix,'\n')
 cat('buffer',BUFFER,'\n')
-cat('gene.file',gene.file,'\n')
+cat('genefile',gene.file,'\n')
 cat('snp.filter',snp.filter,'\n')
 cat('top.maf',top.maf,'\n')
 cat('test.stat',test.stat,'\n')
 cat('test.type',test.type,'\n')
 cat('outcome.type',outcome.type,'\n')
+cat('het_vars',het_vars,'\n')
+cat('conditional',conditional,'\n')
 
 if(conditional != 'NA'){
   cpos = strsplit(conditional,':')[[1]][2]
@@ -110,8 +113,7 @@ num_cores <- detectCores(logical=TRUE)
 
 
 registerDoMC(cores=min(c(user_cores,num_cores)))
-cat('Running Analysis with ',min(c(as.numeric(user_cores),num_cores)),' cores\n')
-cat('Number of cores', num_cores,'\n')
+cat('Running Analysis with ',min(c(as.numeric(user_cores),num_cores)),' cores of ',num_cores,'\n')
 
 ## Setup
 source("/home/dnanexus/pipelineFunctions.R")
@@ -133,22 +135,30 @@ phenotype.data <- read.csv(phenotype.file, header=TRUE, as.is=TRUE)
 
 
 cat('Input pheno N=',nrow(phenotype.data),'\n')
-pheno <- reducePheno(phenotype.data, outcome.name, covariates, pheno.id)
+if(het_vars != 'NA'){
+    cat('prep pheno with het vars')
+    pheno <- reducePheno(phenotype.data, outcome.name, covariates=covariates,hetvars=het_vars, id=pheno.id)
+}else{
+    cat('prep pheno without het vars\n')
+    het_vars = NA
+    pheno <- reducePheno(phenotype.data, outcome.name, covariates=covariates, id=pheno.id)
+}
 cat('Output pheno N=',nrow(pheno),'\n')
 
 ## Report dropped individuals
 dropped.ids.selector <- !(phenotype.data[[pheno.id]] %in% row.names(pheno))
 dropped.ids <- phenotype.data[[pheno.id]][dropped.ids.selector] 
 if (NROW(dropped.ids) != 0 ) {
-  cat("ID because of incomplete cases:", length(dropped.ids) )
+  cat("Dropped because of incomplete cases:", length(dropped.ids) )
 }
 
 # For GDS files
 f <- seqOpen(genotype.files)
 sample.ids <- seqGetData(f, "sample.id")
-pheno <- pheno[row.names(pheno) %in% sample.ids,c(outcome.name, covariates),drop=F]
+all.terms <- unique(c(outcome.name, covariates, het_vars))
+pheno <- pheno[row.names(pheno) %in% sample.ids,na.omit(all.terms),drop=F]
 cat('Output pheno after mergeing with Genos N=',nrow(pheno),'\n')
-head(pheno)
+
 
 full.sample.ids <- sample.ids 
 
@@ -272,7 +282,16 @@ if (test.stat == 'Firth'){
                      covars = covariates,
                      family = GetFamilyDistribution(outcome.type))
 
+}else if (!is.na(het_vars)){
+  cat('Fitting model with heterogeneous variances')
+  nullmod <- fitNullMM(scanData = scan.annotated.frame,
+                     outcome = outcome.name,
+                     group.var = het_vars,
+                     covars = covariates,
+                     family = GetFamilyDistribution(outcome.type),
+                     covMatList = kmatr)
 }else{
+  cat('Fitting model ')
   nullmod <- fitNullMM(scanData = scan.annotated.frame,
                      outcome = outcome.name,
                      covars = covariates,
@@ -280,7 +299,8 @@ if (test.stat == 'Firth'){
                      covMatList = kmatr)
 }
 
-sort( sapply(ls(),function(x){object.size(get(x))})) 
+#sum( sapply(ls(),function(x){object.size(get(x))})) 
+#sort( sapply(ls(),function(x){object.size(get(x))})) 
 rm(kmatr)
 rm(scan.annotated.frame)
 sample_ids = row.names(pheno)
@@ -289,10 +309,11 @@ head(snpinfo)
 snpinfo = as.data.frame(snpinfo)[,c('CHR','POS')]
 gc()
 
+sum( sapply(ls(),function(x){object.size(get(x))})) 
 sort( sapply(ls(),function(x){object.size(get(x))})) 
 ## For each aggregation unit - named 'gene' in code, but can be any start-stop region
 ## Work for each gene is parallelized over the cores
-print(ls())
+#print(ls())
 mcoptions <- list(preschedule=FALSE, set.seed=FALSE)
 sm_obj <- 
 foreach (current.gene=genes, 
@@ -326,18 +347,19 @@ foreach (current.gene=genes,
     seqSetFilter(f,variant.id = snp_idx,sample.id = sample_ids,verbose=FALSE)
     
     ## filter to maf and remove monomorphic
-    maf <- SeqVarTools::alleleFrequency(f)
+    maf <- seqAlleleFreq(f)
     maf <- ifelse(maf < 0.5, maf, 1-maf)
     filtered.alleles = TRUE
     if (test.type %in% collapsing.tests){
         filtered.alleles <- maf < top.maf
     }
     mac <- getMAC(f)
+    gc() # whole genotype matrix hanging around in memory
     if (test.type ==  'Single'){
       filtered.alleles <- mac  >= min.mac
+      #mac.filt <- 2 * maf *  length(sample_ids) >= mmin
       
     }
-    
     seqSetFilter(f,variant.sel=snp_idx[filtered.alleles & maf > 0], verbose=FALSE)
     num.polymorphic.snps <- seqSummary(f, "genotype", check="none", verbose=FALSE)[["seldim"]][3]
     num.snps = length(maf)
@@ -374,11 +396,13 @@ foreach (current.gene=genes,
       } else {  # Single variant test
  
           system.time({generes <- assocTestMM(genotype.data, 
-                                              nullmod, 
+                                              nullmod, snp.block.size = 2000,
                                               test = test.stat,verbose=TRUE)})
           generes$gene <- current.gene
           generes$pos=pos[snp_idx[filtered.alleles & maf > 0]]
           generes$snpID = paste0(generes$chr,':',generes$pos)
+          generes$ref = sapply(seqGetData(f, "allele"),FUN=function(x)strsplit(x,',')[[1]][1])
+          generes$alt = sapply(seqGetData(f, "allele"),FUN=function(x)strsplit(x,',')[[1]][2])      
           
       }
    } 

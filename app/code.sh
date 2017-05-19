@@ -1,5 +1,4 @@
 #!/bin/bash
-# CHARGE_SeqMeta2 0.0.2
 
 main() {
 
@@ -28,7 +27,8 @@ main() {
     covariate_list=$(echo ${covariate_list} | sed 's/ //g') 
     echo "Value of covariate_list: '$covariate_list'"
     echo "value of conditional SNP: '$conditional'"    
-    echo "Value of user_cores: '$user_cores'"
+    echo "Value of user_cores: '$user_cores'" 
+    echo "Value of het_vars: '$het_vars'"
 
 
     dx download "$phenofile" -o phenofile &
@@ -56,7 +56,7 @@ main() {
     export MKL_NUM_THREADS=1
     wait
 
-    echo "\nKINSHIP"
+    echo "KINSHIP"
     kinshipmatrix_filename=$( dx describe --name "$kinshipmatrix" )
     
  
@@ -66,7 +66,7 @@ main() {
     if [ ${debug} -ne 0 ]
     then
        echo "DEBUG is on sleeping for ${debug}h"
-       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $user_cores"
+       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $user_cores $het_vars"
        sleep ${debug}h
     fi
     wait
@@ -78,9 +78,9 @@ main() {
        echo "The phenofile is not ready"
     fi
  
-    echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $conditional"
+    echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $conditional $het_vars"
     echo "Running code"
-    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf  $test_stat $test_type $min_mac $weights $conditional $user_cores
+    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf  $test_stat $test_type $min_mac $weights $conditional $user_cores $het_vars
     echo "Finished running code"
     results=$(dx upload results --brief)
     dx-jobutil-add-output results "$results" --class=file

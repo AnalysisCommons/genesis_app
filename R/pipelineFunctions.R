@@ -14,27 +14,6 @@ checkPhenotype <- function(p, outcome, covariates, id.col=NULL, gender.col=NULL)
     }
   }
   
-  if(!is.null(gender.col)) {
-    if (!(gender.col %in% colnames(p))) {
-      msg <- paste(gender.col, "not found in phenotype file.", sep=" ")
-      stop(msg)
-    }
-    gtype <- typeof(p[[gender.col]])
-    g <- unique(p[[gender.col]])
-    if(gtype == "integer") {
-      if (!all(g %in% c(0, 1))) {
-        stop("Gender must be (0/1 or F/T) indicating female/male.")
-      }      
-    } else if(gtype == "character") {
-      if (!all(g %in% c("F", "M"))) {
-        stop("Gender must be (0/1 or F/T) indicating female/male.")
-      }        
-    }     
-  } else {
-    wmsg <- "No column given to identify Males in phenotype file.  No special 
-         handling of the X chromosme."
-    warning(wmsg)
-  }
   missing.covariates <- !(covariates %in% colnames(p))
   if (any(missing.covariates)) {
     msg <- paste("Covariates:", covariates[missing.covariates], "not found in phenotype file.\n", sep=" ")
@@ -73,23 +52,16 @@ checkPhenotype <- function(p, outcome, covariates, id.col=NULL, gender.col=NULL)
 reducePheno <- function(pheno.data, 
                         outcome, 
                         covariates = NULL, 
+                        hetvars = NULL, 
                         id=NULL, 
                         gender=NULL) {
   checkPhenotype(pheno.data, outcome, covariates, id.col=id, gender.col=gender)   
-  
   if (!is.null(id)) {
     rownames(pheno.data) <- pheno.data[ ,id]
   }
-  if (!is.null(gender)) {
-      gtype <- typeof(pheno.data[[gender]])
-      if(gtype == "integer") {
-            males <-  pheno.data[[ gender ]] == 0 
-            pheno.data[[ gender]] <- "F"
-            pheno.data[[gender]][males] <- "M"
-      }
-  }
-
-  all.terms <- unique(c(outcome, covariates, gender))
+  
+  all.terms <- unique(c(outcome, covariates, hetvars, gender))
+  cat('all terms',print(all.terms),'\n')
   pheno.data <- as.data.frame(pheno.data) 
   pheno <- na.omit(pheno.data[, all.terms, drop=F])
   return(pheno)
@@ -117,3 +89,20 @@ split.by.comma <- function(cur.string){
     
 
 
+filterByMAF <- function(gds, sample.id=NULL, mac.min=NA, maf.min=NA, verbose=TRUE) {
+    if ((!is.na(mac.min) & mac.min > 1) |
+        (!is.na(maf.min) & maf.min > 0)) {
+        if (is.null(sample.id)) sample.id <- seqGetData(gds, "sample.id")
+        seqSetFilter(gds, sample.id=sample.id, verbose=FALSE)
+        ref.freq <- seqAlleleFreq(gds)
+        maf <- pmin(ref.freq, 1-ref.freq)
+        if (!is.na(mac.min)) {
+            maf.filt <- 2 * maf * (1-maf) * length(sample.id) >= mac.min
+            if (verbose) message(paste("Running on", sum(maf.filt), "variants with MAC >=", mac.min))
+        } else {
+            maf.filt <- maf >= maf.min
+            if (verbose) message(paste("Running on", sum(maf.filt), "variants with MAF >=", maf.min))
+        }
+        seqSetFilter(gds, variant.sel=maf.filt, action="intersect", verbose=verbose)
+    }
+}

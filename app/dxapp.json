@@ -29,7 +29,7 @@
     },
     {
       "name": "snpinfofile",
-      "label": "Annotation file for filtering variants.  The variant .... ",
+      "label": "Annotation file for filtering variants.  The file should be tab separated and contain the columns 'SNP' ( format 19:12345), 'CHR' (numeric 1-24) and 'POS'.  Other column names can be used for filtering using snp_filter input.",
       "class": "file",
       "optional": false,
       "patterns": [
@@ -71,7 +71,7 @@
     },
     {
       "name": "test_type",
-      "help": "Valid tests are one of the collapsing tests SKAT, Burden, SKATO or Single",
+      "help": "Valid tests are one of the collapsing tests SKAT, Burden or Single",
       "class": "string",
       "optional": false
     },
@@ -98,7 +98,7 @@
     },
     {
       "name": "genefile",
-      "help": "File contains the start and stop positions for aggregating variants into region-based tests.  File must contain 3 requeired columns labeled 'start', 'stop' and 'CHR'.   start and stop must be numeric.  CHR must be in the form of 'chr#'. ",
+      "help": "File contains the start and stop positions for aggregating variants into region-based tests.  File must contain 3 required columns labeled 'start', 'stop' and 'CHR'. start and stop must be numeric.  CHR must be in the form of 'chr#'.  (adv note. If this file is provided for single-snp tests it will parallelize based on the start-stop chunks and can be used to filter to a subset of the chromosome in combination with gene_filter)",
       "class": "file",
       "optional": true
     },
@@ -138,10 +138,17 @@
       "default": "NA"
     },
     {
+      "name": "het_vars",
+      "help": "grouping variable for heterogenous variances",
+      "class": "string",
+      "optional": true,
+      "default": "NA"
+    },
+    {
       "name": "weights",
       "help": "beta weights set to flat weights (e.g. set to 'c(1,25)' for Wu weights or 'c(0.5,0.5)' for Madsen-Browning weights)",
       "class": "string",
-      "optional": false,
+      "optional": true,
       "default": "c(1,1)"
     },
     {
