@@ -22,7 +22,8 @@
     },
     {
       "name": "covariate_list",
-      "label": "Comma separated list that match column names in the phenotype file. Leave blank for no adjustments",
+      "label": "Covariates",
+      "help":"Comma separated list that match column names in the phenotype file. Leave blank for no adjustments",
       "class": "string",
       "optional": true,
       "default": ""
@@ -31,7 +32,7 @@
       "name": "snpinfofile",
       "label": "Annotation file for filtering variants.  The file should be tab separated and contain the columns 'SNP' ( format 19:12345), 'CHR' (numeric 1-24) and 'POS'.  Other column names can be used for filtering using snp_filter input.",
       "class": "file",
-      "optional": false,
+      "optional": true,
       "patterns": [
         "*.csv",
         "*.txt"
@@ -54,7 +55,7 @@
     },
     {
       "name": "kinshipmatrix",
-      "label": "kinship matrix with sample ids as the row and column names.  Matrices save as R data will load faster, but csv is accepted as well",
+      "label": "kinship matrix with sample ids as the row and column names.  Matricies saved as Rda will load faster, but csv is accepted as well. Rda files should contain a single numeric matrix object.",
       "class": "file",
       "optional": false,
       "patterns": [
@@ -99,6 +100,12 @@
     {
       "name": "genefile",
       "help": "File contains the start and stop positions for aggregating variants into region-based tests.  File must contain 3 required columns labeled 'start', 'stop' and 'CHR'. start and stop must be numeric.  CHR must be in the form of 'chr#'.  (adv note. If this file is provided for single-snp tests it will parallelize based on the start-stop chunks and can be used to filter to a subset of the chromosome in combination with gene_filter)",
+      "class": "file",
+      "optional": true
+    },
+    {
+      "name": "varaggfile",
+      "help": "File contains lists of variants that should be aggregated into groups.  File should be a CSV file with the headers: group_id, chromosome, position, ref and alt.  All variants for with the same group_id will be combined into a single aggregate tests.  Use of this option overrides any the genefile, snpinfofile, snpfilter and genefilter options.",
       "class": "file",
       "optional": true
     },

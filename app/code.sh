@@ -13,6 +13,7 @@ main() {
 
     echo "Value of buffer: '$buffer'"
     echo "Value of genefile: '$genefile'"
+    echo "Value of varaggfile: '$varaggfile'"
     echo "Value of snp_filter: '$snp_filter'"
     echo "Value of gene_filter: '$gene_filter'"
     echo "Value of top_maf: '$top_maf'"
@@ -33,8 +34,17 @@ main() {
 
     dx download "$phenofile" -o phenofile &
     dx download "$genotypefile" -o genotypefile &
-    dx download "$snpinfofile" -o snpinfofile &
     dx download "$kinshipmatrix"   &
+
+    # snpinfofile
+    if [[ "$snpinfofile" != "" ]] ; then
+	echo 'downloading snpinfofile'
+	
+	dx download "$snpinfofile" -o snpinfofile &
+	insnpinfofile="snpinfofile"
+    else
+	insnpinfofile="NO_SNPINFO_FILE"
+    fi
 
     # genefile
     if [[ "$genefile" != "" ]] ; then
@@ -42,9 +52,19 @@ main() {
 	
 	dx download "$genefile" -o genefile &
 	ingenefile="genefile"
-	#genefile = genefile
     else
 	ingenefile="NO_GENE_REGION_FILE"
+    fi
+
+
+    # varaggfile
+    if [[ "$varaggfile" != "" ]] ; then
+	echo 'downloading varaggfile'
+	
+	dx download "$varaggfile" -o varaggfile &
+	invaraggfile="varaggfile"
+    else
+	invaraggfile="NO_VAR_AGG_FILE"
     fi
 
     # install R
@@ -66,7 +86,7 @@ main() {
     if [ ${debug} -ne 0 ]
     then
        echo "DEBUG is on sleeping for ${debug}h"
-       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $user_cores $het_vars"
+       echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" $insnpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $invaraggfile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $user_cores $het_vars"
        sleep ${debug}h
     fi
     wait
@@ -78,9 +98,9 @@ main() {
        echo "The phenofile is not ready"
     fi
  
-    echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf $test_requested $burden_test $min_mac $weights $conditional $het_vars"
+    echo "Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" $insnpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $invaraggfile $snp_filter $gene_filter $top_maf $test_stat $test_type $min_mac $weights $conditional $het_vars"
     echo "Running code"
-    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" snpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $snp_filter $gene_filter $top_maf  $test_stat $test_type $min_mac $weights $conditional $user_cores $het_vars
+    Rscript genesis.R phenofile $outcome_name $outcome_type \"$covariate_list\" $insnpinfofile genotypefile results $kinshipmatrix_filename $pheno_id  $buffer $ingenefile $invaraggfile $snp_filter $gene_filter $top_maf  $test_stat $test_type $min_mac $weights $conditional $user_cores $het_vars
     echo "Finished running code"
     results=$(dx upload results --brief)
     dx-jobutil-add-output results "$results" --class=file
